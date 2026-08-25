@@ -1,0 +1,58 @@
+import { useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { getChapterVerseNumbers, getWeek } from '@/lib/data'
+import Header from '@/components/Header'
+import TabSwitcher, { type TestMode } from '@/components/TabSwitcher'
+import ProgressBar from '@/components/ProgressBar'
+import BlurTest from '@/components/selftest/BlurTest'
+import ClozeTest from '@/components/selftest/ClozeTest'
+import WordOrderTest from '@/components/selftest/WordOrderTest'
+import type { FinishResult } from '@/components/selftest/types'
+
+const VALID_MODES: TestMode[] = ['order', 'cloze', 'blur']
+const PROGRESS_UNIT: Record<TestMode, string> = {
+  order: '완료',
+  cloze: '정답 확인',
+  blur: '확인함',
+}
+
+export default function SelfTest() {
+  const { n, mode } = useParams()
+  const chapterN = Number(n)
+  const week = getWeek(chapterN)
+  const navigate = useNavigate()
+  const [progress, setProgress] = useState(0)
+
+  if (!week || !mode || !VALID_MODES.includes(mode as TestMode)) {
+    return <Navigate to="/" replace />
+  }
+  const testMode = mode as TestMode
+  const verseNumbers = getChapterVerseNumbers(week)
+  const total = verseNumbers.length
+  const percent = total === 0 ? 0 : Math.round((progress / total) * 100)
+
+  function handleFinish(result: FinishResult) {
+    navigate(`/chapter/${chapterN}/test/${testMode}/complete`, {
+      state: { chapterN, mode: testMode, weekTitle: week!.title, range: week!.range, ...result },
+    })
+  }
+
+  return (
+    <div className="mx-auto min-h-screen max-w-[480px] bg-cream">
+      <Header title={`${chapterN}챕터 셀프테스트`} subtitle={week.title}>
+        <ProgressBar label={`${progress}/${total} ${PROGRESS_UNIT[testMode]}`} percent={percent} />
+      </Header>
+      <TabSwitcher chapterN={chapterN} activeMode={testMode} />
+
+      {testMode === 'blur' && (
+        <BlurTest chapterN={chapterN} verseNumbers={verseNumbers} onProgress={setProgress} onFinish={handleFinish} />
+      )}
+      {testMode === 'cloze' && (
+        <ClozeTest chapterN={chapterN} verseNumbers={verseNumbers} onProgress={setProgress} onFinish={handleFinish} />
+      )}
+      {testMode === 'order' && (
+        <WordOrderTest chapterN={chapterN} verseNumbers={verseNumbers} onProgress={setProgress} onFinish={handleFinish} />
+      )}
+    </div>
+  )
+}

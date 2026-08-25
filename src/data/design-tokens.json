@@ -1,0 +1,17 @@
+{
+  "colors": {
+    "navy": "#2B3A55",
+    "navyDeep": "#1F2B40",
+    "cream": "#FBF3E7",
+    "creamDark": "#F3E6D3",
+    "gold": "#F4A259",
+    "goldDeep": "#E08E3E",
+    "teal": "#5B9A8B",
+    "tealDeep": "#457B6E",
+    "coral": "#E76F51",
+    "white": "#FFFFFF",
+    "textDark": "#3D3D3D",
+    "textMuted": "#7A7A7A"
+  },
+  "font": "맑은 고딕, Pretendard, sans-serif"
+}

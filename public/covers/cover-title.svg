@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  
+  <defs>
+    <linearGradient id="gTitle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F2B40"/>
+      <stop offset="1" stop-color="#4A5B72"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#gTitle)"/>
+  <circle cx="1000" cy="150" r="70" fill="#F4A259" opacity="0.9"/>
+          <circle cx="1000" cy="150" r="112" fill="#F4A259" opacity="0.18"/>
+  
+  <path d="M0 560 L280 380 L470 520 L680 340 L900 540 L1120 400 L1280 520 L1280 720 L0 720 Z" fill="#F4A259" opacity="0.55"/>
+  <path d="M0 620 C 300 570 500 660 780 600 C 980 560 1150 630 1280 600 L1280 720 L0 720 Z" fill="#457B6E" opacity="0.85"/>
+  
+  
+  <g fill="#1F2B40" opacity="0.9">
+    <!-- teacher -->
+    <path d="M640 520 C640 480 660 460 670 460 C680 460 700 480 700 520 L705 600 L635 600 Z"/>
+    <circle cx="670" cy="445" r="16"/>
+    <!-- listeners -->
+    <path d="M560 560 C560 535 575 520 583 520 C591 520 606 535 606 560 L609 605 L557 605 Z"/>
+    <circle cx="583" cy="510" r="12"/>
+    <path d="M735 560 C735 535 750 520 758 520 C766 520 781 535 781 560 L784 605 L732 605 Z"/>
+    <circle cx="758" cy="510" r="12"/>
+    <path d="M495 575 C495 555 507 543 513 543 C519 543 531 555 531 575 L533 608 L493 608 Z"/>
+    <circle cx="513" cy="535" r="10"/>
+  </g>
+  
+  </svg>
