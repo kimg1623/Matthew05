@@ -1,13 +1,14 @@
 import { supabase } from '@/lib/supabase'
+import type { Grade } from '@/lib/auth'
 
 type UpdateResult = { ok: true } | { ok: false; message: string }
 
 export async function updateStudent(
   targetUserId: string,
-  updates: { name?: string; pin?: string },
+  updates: { name?: string; grade?: Grade; pin?: string },
 ): Promise<UpdateResult> {
   const { data, error } = await supabase.functions.invoke('admin-update-student', {
-    body: { targetUserId, newName: updates.name, newPin: updates.pin },
+    body: { targetUserId, newName: updates.name, newGrade: updates.grade, newPin: updates.pin },
   })
 
   if (error) {

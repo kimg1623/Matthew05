@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { updateStudent } from '@/lib/adminActions'
+import { GRADES, type Grade } from '@/lib/auth'
 
 type Props = {
   userId: string
   currentName: string
+  currentGrade: Grade
   onClose: () => void
-  onSaved: (newName: string) => void
+  onSaved: (updated: { name: string; grade: Grade }) => void
 }
 
-export default function StudentEditModal({ userId, currentName, onClose, onSaved }: Props) {
+export default function StudentEditModal({ userId, currentName, currentGrade, onClose, onSaved }: Props) {
   const [name, setName] = useState(currentName)
+  const [grade, setGrade] = useState<Grade>(currentGrade)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -26,7 +29,8 @@ export default function StudentEditModal({ userId, currentName, onClose, onSaved
       return
     }
     const nameChanged = cleanName !== currentName
-    if (!nameChanged && !pin) {
+    const gradeChanged = grade !== currentGrade
+    if (!nameChanged && !gradeChanged && !pin) {
       onClose()
       return
     }
@@ -34,6 +38,7 @@ export default function StudentEditModal({ userId, currentName, onClose, onSaved
     setSubmitting(true)
     const result = await updateStudent(userId, {
       name: nameChanged ? cleanName : undefined,
+      grade: gradeChanged ? grade : undefined,
       pin: pin || undefined,
     })
     setSubmitting(false)
@@ -42,7 +47,7 @@ export default function StudentEditModal({ userId, currentName, onClose, onSaved
       setError(result.message)
       return
     }
-    onSaved(cleanName)
+    onSaved({ name: cleanName, grade })
   }
 
   return (
@@ -62,6 +67,19 @@ export default function StudentEditModal({ userId, currentName, onClose, onSaved
           onChange={(e) => setName(e.target.value)}
           className="w-full rounded-[10px] border-[1.5px] border-gold/50 bg-white px-3.5 py-2.5 text-[15px] font-bold text-navy outline-none"
         />
+
+        <div className="mb-1.5 mt-3.5 text-[11.5px] font-semibold text-text-muted">구분</div>
+        <select
+          value={grade}
+          onChange={(e) => setGrade(e.target.value as Grade)}
+          className="w-full rounded-[10px] border-[1.5px] border-gold/50 bg-white px-3.5 py-2.5 text-[15px] font-bold text-navy outline-none"
+        >
+          {GRADES.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
 
         <div className="mb-1.5 mt-3.5 text-[11.5px] font-semibold text-text-muted">
           새 PIN (변경할 때만 입력, 숫자 4자리)

@@ -147,9 +147,12 @@ function SummaryView() {
         <StudentEditModal
           userId={editingRow.user_id}
           currentName={editingRow.name}
+          currentGrade={editingRow.grade}
           onClose={() => setEditingRow(null)}
-          onSaved={(newName) => {
-            setRows((prev) => prev.map((r) => (r.user_id === editingRow.user_id ? { ...r, name: newName } : r)))
+          onSaved={(updated) => {
+            setRows((prev) =>
+              prev.map((r) => (r.user_id === editingRow.user_id ? { ...r, ...updated } : r)),
+            )
             setEditingRow(null)
           }}
         />

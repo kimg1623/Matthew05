@@ -14,6 +14,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // src/lib/auth.tsx의 PIN_PAD와 반드시 동일해야 한다.
 const PIN_PAD = 'mt5pad'
 
+// src/lib/auth.tsx의 GRADES와 반드시 동일해야 한다.
+const GRADES = ['중1', '중2', '중3', '고1', '고2', '고3', '교사']
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -73,11 +76,13 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => null)
     const targetUserId = body?.targetUserId as string | undefined
     const newNameRaw = body?.newName as string | undefined
+    const newGrade = body?.newGrade as string | undefined
     const newPin = body?.newPin as string | undefined
 
     if (!targetUserId) return json({ ok: false, error: '대상 학생 정보가 없어요.' })
     if (newPin && !/^\d{4}$/.test(newPin)) return json({ ok: false, error: 'PIN은 숫자 4자리여야 해요.' })
-    if (!newNameRaw && !newPin) return json({ ok: false, error: '변경할 내용이 없어요.' })
+    if (newGrade && !GRADES.includes(newGrade)) return json({ ok: false, error: '올바르지 않은 구분이에요.' })
+    if (!newNameRaw && !newGrade && !newPin) return json({ ok: false, error: '변경할 내용이 없어요.' })
 
     // 이후 작업은 RLS를 우회하는 service role로 수행 (호출자 검증은 이미 끝남)
     const admin = createClient(supabaseUrl, serviceRoleKey)
@@ -93,10 +98,13 @@ Deno.serve(async (req) => {
     }
 
     const finalName = newNameRaw ? normalizeName(newNameRaw) : targetProfile.name
+    const finalGrade = newGrade ?? targetProfile.grade
+    const identityChanged = finalName !== targetProfile.name || finalGrade !== targetProfile.grade
+
     const authUpdates: { email?: string; password?: string } = {}
 
-    if (newNameRaw && finalName !== targetProfile.name) {
-      authUpdates.email = await deriveEmail(finalName, targetProfile.grade)
+    if (identityChanged) {
+      authUpdates.email = await deriveEmail(finalName, finalGrade)
     }
     if (newPin) {
       authUpdates.password = `${newPin}${PIN_PAD}`
@@ -112,17 +120,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (newNameRaw && finalName !== targetProfile.name) {
+    if (identityChanged) {
       const { error: profileUpdateError } = await admin
         .from('profiles')
-        .update({ name: finalName })
+        .update({ name: finalName, grade: finalGrade })
         .eq('id', targetUserId)
       if (profileUpdateError) {
-        return json({ ok: false, error: '이름 저장에 실패했어요.' })
+        return json({ ok: false, error: '정보 저장에 실패했어요.' })
       }
     }
 
-    return json({ ok: true, name: finalName })
+    return json({ ok: true, name: finalName, grade: finalGrade })
   } catch {
     return json({ ok: false, error: '서버 오류가 발생했어요.' }, 500)
   }
