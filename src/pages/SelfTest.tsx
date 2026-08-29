@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getWeek } from '@/lib/data'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import Header from '@/components/Header'
 import TabSwitcher, { type TestMode } from '@/components/TabSwitcher'
 import ProgressBar from '@/components/ProgressBar'
@@ -21,6 +23,7 @@ export default function SelfTest() {
   const chapterN = Number(n)
   const week = getWeek(chapterN)
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [progress, setProgress] = useState(0)
 
   if (!week || !mode || !VALID_MODES.includes(mode as TestMode)) {
@@ -31,7 +34,17 @@ export default function SelfTest() {
   const total = verseNumbers.length
   const percent = total === 0 ? 0 : Math.round((progress / total) * 100)
 
-  function handleFinish(result: FinishResult) {
+  async function handleFinish(result: FinishResult) {
+    if (user && result.total > 0) {
+      await supabase.from('test_attempts').insert({
+        user_id: user.id,
+        chapter: chapterN,
+        mode: testMode,
+        correct: result.correct,
+        total: result.total,
+        gradable: result.gradable,
+      })
+    }
     navigate(`/chapter/${chapterN}/test/${testMode}/complete`, {
       state: { chapterN, mode: testMode, weekTitle: week!.title, range: week!.range, ...result },
     })

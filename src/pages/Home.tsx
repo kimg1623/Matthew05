@@ -4,7 +4,7 @@ import ChapterCard from '@/components/ChapterCard'
 
 export default function Home() {
   return (
-    <div className="mx-auto min-h-screen max-w-[480px] bg-cream">
+    <div className="mx-auto min-h-screen max-w-[480px] bg-cream pb-24">
       <div className="bg-navy-deep px-6 pb-10 pt-9">
         <div className="text-[12.5px] font-bold text-gold">마태복음 5장</div>
         <div className="mt-2 text-[26px] font-extrabold leading-tight text-cream">전체 암송 챌린지</div>

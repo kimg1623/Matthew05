@@ -1,16 +1,11 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { getWeek } from '@/lib/data'
+import { useAuth } from '@/lib/auth'
 import Header from '@/components/Header'
 import ChapterCard from '@/components/ChapterCard'
 import ToggleSwitch from '@/components/ToggleSwitch'
-import type { TestMode } from '@/components/TabSwitcher'
-
-const MODE_LABEL: Record<TestMode, string> = {
-  order: '단어 배치',
-  cloze: '빈칸 채우기',
-  blur: '문장 가리기',
-}
+import { MODE_LABEL, type TestMode } from '@/lib/testModes'
 
 type LocationState = {
   chapterN: number
@@ -33,8 +28,8 @@ export default function TestComplete() {
   const chapterN = state?.chapterN ?? Number(n)
   const testMode = (state?.mode ?? mode) as TestMode
   const week = getWeek(chapterN)
+  const { profile } = useAuth()
 
-  const [name, setName] = useState('')
   const [showAccuracy, setShowAccuracy] = useState(true)
 
   if (!week) return <Navigate to="/" replace />
@@ -74,12 +69,9 @@ export default function TestComplete() {
 
         <div className="mt-[18px]">
           <div className="mb-1.5 text-[11.5px] font-semibold text-text-muted">이름</div>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="이름을 입력하세요."
-            className="w-full rounded-[10px] border-[1.5px] border-gold/50 bg-cream px-3.5 py-2.5 text-center text-[15px] font-bold text-navy outline-none placeholder:font-normal placeholder:text-text-muted/75"
-          />
+          <div className="w-full rounded-[10px] border-[1.5px] border-gold/50 bg-cream px-3.5 py-2.5 text-center text-[15px] font-bold text-navy">
+            {profile ? `${profile.name} (${profile.grade})` : '-'}
+          </div>
         </div>
 
         <div className="mt-4 flex justify-center gap-2">
