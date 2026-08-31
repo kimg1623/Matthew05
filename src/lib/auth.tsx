@@ -88,32 +88,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // RequireTeacher 등에서 "프로필이 아직 null이라 교사가 아니다"로 오판하지 않는다.
   const loading = sessionLoading || (Boolean(session) && profileFetchedFor !== session?.user.id)
 
+  // signUp 직후 profiles insert가 실패해 세션은 있지만 프로필이 없는 "고아 계정"이 될 수 있다
+  // (과거 버그, 혹은 드문 네트워크 오류). signIn 경로에서도 이 상태를 복구할 수 있어야
+  // 해당 계정이 영구히 로그인 불가 상태로 고정되지 않는다 — 그래서 두 경로가 이 함수를 공유한다.
+  async function createProfile(userId: string, name: string, grade: Grade): Promise<LoginResult> {
+    const { error: insertError } = await supabase.from('profiles').insert({ id: userId, name, grade })
+    if (insertError) {
+      await supabase.auth.signOut()
+      if (insertError.code === '23505') {
+        return {
+          ok: false,
+          message: '이미 같은 이름/학년으로 등록된 사람이 있어요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
+        }
+      }
+      return { ok: false, message: '가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+    }
+    setProfile({ id: userId, name, grade })
+    return { ok: true }
+  }
+
   async function loginOrSignUp(name: string, grade: Grade, pin: string): Promise<LoginResult> {
     const cleanName = normalizeName(name)
     const email = await deriveEmail(cleanName, grade)
     const password = derivePassword(pin)
 
     const signInResult = await supabase.auth.signInWithPassword({ email, password })
-    if (signInResult.data.session) return { ok: true }
+    if (signInResult.data.session) {
+      const userId = signInResult.data.session.user.id
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle()
+      if (existingProfile) return { ok: true }
+      // 이메일이 이름+학년의 해시라서, 로그인이 성공했다는 것 자체가 이 이름/학년이
+      // 이 계정의 진짜 정보임을 보증한다 — 안전하게 프로필을 복구할 수 있다.
+      return createProfile(userId, cleanName, grade)
+    }
 
     const signUpResult = await supabase.auth.signUp({ email, password })
     if (signUpResult.data.session) {
-      const userId = signUpResult.data.session.user.id
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({ id: userId, name: cleanName, grade })
-      if (insertError) {
-        await supabase.auth.signOut()
-        if (insertError.code === '23505') {
-          return {
-            ok: false,
-            message: '이미 같은 이름/학년으로 등록된 사람이 있어요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
-          }
-        }
-        return { ok: false, message: '가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
-      }
-      setProfile({ id: userId, name: cleanName, grade })
-      return { ok: true }
+      return createProfile(signUpResult.data.session.user.id, cleanName, grade)
     }
 
     return {
