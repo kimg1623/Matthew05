@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { weeks } from '@/lib/data'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
@@ -26,9 +27,15 @@ function emptyCounts(): CountMap {
 }
 
 export default function My() {
-  const { user, profile } = useAuth()
+  const { user, profile, signOut } = useAuth()
+  const navigate = useNavigate()
   const [attempts, setAttempts] = useState<AttemptRow[]>([])
   const [loading, setLoading] = useState(true)
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
 
   useEffect(() => {
     if (!user) return
@@ -63,18 +70,26 @@ export default function My() {
         <div className="mt-3.5 h-[3px] w-10 rounded bg-gold" />
       </div>
 
-      <div className="flex items-center gap-3.5 px-5 pt-5">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy-deep text-xl font-extrabold text-gold">
-          {profile?.name?.[0] ?? '?'}
+      <div className="flex items-center justify-between gap-3.5 px-5 pt-5">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy-deep text-xl font-extrabold text-gold">
+            {profile?.name?.[0] ?? '?'}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[17px] font-extrabold text-navy">{profile?.name ?? '-'}</span>
+            {profile && (
+              <span className="shrink-0 rounded-full bg-gold/[0.15] px-2 py-0.5 text-[11px] font-bold text-gold-deep">
+                {profile.grade}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[17px] font-extrabold text-navy">{profile?.name ?? '-'}</span>
-          {profile && (
-            <span className="shrink-0 rounded-full bg-gold/[0.15] px-2 py-0.5 text-[11px] font-bold text-gold-deep">
-              {profile.grade}
-            </span>
-          )}
-        </div>
+        <button
+          onClick={handleSignOut}
+          className="shrink-0 rounded-full px-3 py-1.5 text-[12.5px] font-bold text-text-muted"
+        >
+          로그아웃
+        </button>
       </div>
 
       <div className="px-5 pt-6 text-[12.5px] font-bold text-text-muted">챕터별 완료 현황</div>

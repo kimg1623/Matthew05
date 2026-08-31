@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { GRADES, useAuth, type Grade } from '@/lib/auth'
 
 export default function Login() {
-  const { user, loading, loginOrSignUp } = useAuth()
+  const { user, profile, loading, loginOrSignUp } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [name, setName] = useState('')
@@ -12,7 +12,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (!loading && user) {
+  if (!loading && user && profile) {
     const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
     return <Navigate to={redirectTo} replace />
   }

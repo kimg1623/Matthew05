@@ -103,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .insert({ id: userId, name: cleanName, grade })
       if (insertError) {
+        await supabase.auth.signOut()
+        if (insertError.code === '23505') {
+          return {
+            ok: false,
+            message: '이미 같은 이름/학년으로 등록된 사람이 있어요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
+          }
+        }
         return { ok: false, message: '가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
       }
       setProfile({ id: userId, name: cleanName, grade })
