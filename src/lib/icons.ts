@@ -32,7 +32,7 @@ export function iconUrlForVerse(verseNumber: number, chapterN: number): string {
 }
 
 export function coverUrlForChapter(chapterN: number): string {
-  return `/covers/cover-week${chapterN}.svg`
+  return `/covers/cover-week${chapterN}.jpg`
 }
 
 export type VerseGroup = { icon: string; verseNumbers: number[] }

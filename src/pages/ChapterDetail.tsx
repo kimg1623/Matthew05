@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getVerseText, getWeek } from '@/lib/data'
 import { accentNameForChapter, coverUrlForChapter, groupVersesByIcon } from '@/lib/icons'
@@ -7,6 +8,7 @@ export default function ChapterDetail() {
   const chapterN = Number(n)
   const week = getWeek(chapterN)
   const navigate = useNavigate()
+  const [zoomed, setZoomed] = useState(false)
 
   if (!week) return <Navigate to="/" replace />
 
@@ -27,6 +29,18 @@ export default function ChapterDetail() {
           <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
             <path d="M15 6l-6 6 6 6" />
           </svg>
+        </button>
+        <button
+          onClick={() => setZoomed(true)}
+          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/[0.18] py-2 pl-2.5 pr-3"
+          aria-label="그림 크게 보기"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M11 8v6M8 11h6" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <span className="text-xs font-bold text-white">그림크게보기</span>
         </button>
         <div className="absolute bottom-4 left-5 right-5">
           <span className="inline-block rounded-full bg-gold px-2.5 py-1 text-xs font-bold text-navy-deep">
@@ -75,6 +89,37 @@ export default function ChapterDetail() {
           셀프테스트 시작 →
         </Link>
       </div>
+
+      {zoomed && (
+        <div
+          onClick={() => setZoomed(false)}
+          className="fixed inset-0 z-30 flex items-center justify-center bg-[#0f141e]/[0.94]"
+        >
+          <button
+            onClick={() => setZoomed(false)}
+            className="absolute right-4 top-4 z-10 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white/[0.14]"
+            aria-label="닫기"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute left-1/2 top-1/2 aspect-[16/9] w-[100vh] max-w-[177.78vw] -translate-x-1/2 -translate-y-1/2 rotate-90 overflow-hidden"
+          >
+            <img src={coverUrlForChapter(chapterN)} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-navy-deep/0 via-navy-deep/0 to-navy-deep/[0.85]" />
+            <div className="absolute bottom-[18px] left-5 right-5">
+              <span className="inline-block rounded-full bg-gold px-3 py-[5px] text-[13px] font-bold text-navy-deep">
+                {chapterN}챕터
+              </span>
+              <div className="mt-2.5 text-[23px] font-extrabold leading-tight text-white">{week.title}</div>
+              <div className="mt-1 text-[13px] font-semibold text-gold">{week.range}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
