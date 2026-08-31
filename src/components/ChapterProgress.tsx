@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { weeks } from '@/lib/data'
 import { ModeBadge, DateBadge } from '@/components/Badges'
 import { MODE_COLORS, MODE_LABEL, TEST_MODES, accuracyLabel, type TestMode } from '@/lib/testModes'
@@ -22,13 +23,18 @@ function emptyCounts(): CountMap {
   return map
 }
 
+const PAGE_SIZE = 10
+
 export default function ChapterProgress({ attempts, loading }: { attempts: AttemptRow[]; loading: boolean }) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
   const counts = emptyCounts()
   for (const a of attempts) {
     if (counts[a.chapter]) counts[a.chapter][a.mode] += 1
   }
 
-  const recent = attempts.slice(0, 8)
+  const recent = attempts.slice(0, visibleCount)
+  const hasMore = attempts.length > visibleCount
 
   return (
     <>
@@ -85,6 +91,14 @@ export default function ChapterProgress({ attempts, loading }: { attempts: Attem
             <div className="text-right text-[15px] font-extrabold text-teal-deep">{accuracyLabel(a)}</div>
           </div>
         ))}
+        {hasMore && (
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="py-2 text-center text-[13px] font-bold text-teal-deep"
+          >
+            더보기
+          </button>
+        )}
       </div>
     </>
   )
