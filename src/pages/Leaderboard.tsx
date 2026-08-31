@@ -10,8 +10,11 @@ type SummaryRow = {
   name: string
   grade: Grade
   completed_chapters: number
+  total_attempts: number
   avg_accuracy: number | null
 }
+
+type SortBy = 'count' | 'name'
 
 type AttemptRow = {
   id: number
@@ -78,6 +81,7 @@ function SummaryView() {
   const [rows, setRows] = useState<SummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<(typeof GRADE_FILTERS)[number]>('전체')
+  const [sortBy, setSortBy] = useState<SortBy>('count')
   const [editingRow, setEditingRow] = useState<SummaryRow | null>(null)
 
   useEffect(() => {
@@ -97,6 +101,9 @@ function SummaryView() {
   }, [])
 
   const filtered = filter === '전체' ? rows : rows.filter((row) => row.grade === filter)
+  const sorted = [...filtered].sort((a, b) =>
+    sortBy === 'name' ? a.name.localeCompare(b.name, 'ko') : b.completed_chapters - a.completed_chapters,
+  )
 
   return (
     <>
@@ -115,12 +122,22 @@ function SummaryView() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2.5 px-4 pb-8 pt-4">
+      <div className="flex items-center justify-end gap-1.5 px-4 pt-3.5 text-[12.5px] font-bold">
+        <button onClick={() => setSortBy('name')} className={sortBy === 'name' ? 'text-teal-deep' : 'text-text-muted'}>
+          이름순
+        </button>
+        <span className="text-text-muted/60">·</span>
+        <button onClick={() => setSortBy('count')} className={sortBy === 'count' ? 'text-teal-deep' : 'text-text-muted'}>
+          완료수 순
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2.5 px-4 pb-8 pt-3">
         {loading && <div className="py-10 text-center text-sm text-text-muted">불러오는 중...</div>}
-        {!loading && filtered.length === 0 && (
+        {!loading && sorted.length === 0 && (
           <div className="py-10 text-center text-sm text-text-muted">아직 기록이 없어요.</div>
         )}
-        {filtered.map((row, i) => (
+        {sorted.map((row, i) => (
           <button
             key={row.user_id}
             onClick={() => setEditingRow(row)}
@@ -130,13 +147,20 @@ function SummaryView() {
               {i + 1}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[14.5px] font-bold text-navy">{row.name}</div>
-              <div className="text-[11.5px] text-text-muted">{row.grade}</div>
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-[14.5px] font-bold text-navy">{row.name}</span>
+                <GradeBadge grade={row.grade} />
+              </div>
             </div>
             <div className="text-right">
-              <div className="text-[15px] font-extrabold text-teal-deep">{row.completed_chapters}/8챕터</div>
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="shrink-0 rounded-full bg-teal/[0.15] px-2.5 py-[3px] text-[12.5px] font-extrabold text-teal-deep">
+                  {row.total_attempts}회 완료
+                </span>
+                <span className="text-[14px] font-bold text-navy">{row.completed_chapters}/8챕터</span>
+              </div>
               {row.avg_accuracy !== null && (
-                <div className="text-[11px] text-text-muted">평균 정답률 {row.avg_accuracy}%</div>
+                <div className="mt-1 text-[11px] text-text-muted">평균 정답률 {row.avg_accuracy}%</div>
               )}
             </div>
           </button>

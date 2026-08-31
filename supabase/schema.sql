@@ -75,7 +75,8 @@ select
   count(distinct a.chapter) as completed_chapters,
   round(
     avg(case when a.gradable then a.correct::numeric / nullif(a.total, 0) end) * 100
-  ) as avg_accuracy
+  ) as avg_accuracy,
+  count(a.id) as total_attempts
 from public.profiles p
 left join public.test_attempts a on a.user_id = p.id
 group by p.id, p.name, p.grade;
