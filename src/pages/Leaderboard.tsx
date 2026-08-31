@@ -89,7 +89,7 @@ function SummaryView() {
     supabase
       .from('leaderboard')
       .select('*')
-      .order('completed_chapters', { ascending: false })
+      .order('total_attempts', { ascending: false })
       .then(({ data }) => {
         if (!active) return
         setRows((data ?? []) as SummaryRow[])
@@ -102,7 +102,7 @@ function SummaryView() {
 
   const filtered = filter === '전체' ? rows : rows.filter((row) => row.grade === filter)
   const sorted = [...filtered].sort((a, b) =>
-    sortBy === 'name' ? a.name.localeCompare(b.name, 'ko') : b.completed_chapters - a.completed_chapters,
+    sortBy === 'name' ? a.name.localeCompare(b.name, 'ko') : b.total_attempts - a.total_attempts,
   )
 
   return (
