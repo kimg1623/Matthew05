@@ -23,7 +23,7 @@ export default function ChapterDetail() {
         <div className="absolute inset-0 bg-gradient-to-b from-navy-deep/0 via-navy-deep/10 to-navy-deep/[0.88]" />
         <button
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white/[0.18]"
+          className="absolute left-4 top-4 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white/[0.4]"
           aria-label="뒤로가기"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
@@ -32,7 +32,7 @@ export default function ChapterDetail() {
         </button>
         <button
           onClick={() => setZoomed(true)}
-          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/[0.18] py-2 pl-2.5 pr-3"
+          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/[0.4] py-2 pl-2.5 pr-3"
           aria-label="그림 크게 보기"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
