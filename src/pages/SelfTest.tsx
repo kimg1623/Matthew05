@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getWeek } from '@/lib/data'
 import { supabase } from '@/lib/supabase'
@@ -25,6 +25,9 @@ export default function SelfTest() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [progress, setProgress] = useState(0)
+  // "테스트 완료" 버튼은 insert가 끝날 때까지 화면에 그대로 남아있어서, 응답이 느릴 때 연속으로
+  // 누르면 같은 결과가 여러 번 저장되던 버그가 있었다 — 첫 호출 이후는 전부 무시한다.
+  const finishedRef = useRef(false)
 
   if (!week || !mode || !VALID_MODES.includes(mode as TestMode)) {
     return <Navigate to="/" replace />
@@ -35,6 +38,9 @@ export default function SelfTest() {
   const percent = total === 0 ? 0 : Math.round((progress / total) * 100)
 
   async function handleFinish(result: FinishResult) {
+    if (finishedRef.current) return
+    finishedRef.current = true
+
     if (user && result.total > 0) {
       await supabase.from('test_attempts').insert({
         user_id: user.id,
