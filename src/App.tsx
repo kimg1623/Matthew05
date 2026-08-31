@@ -8,6 +8,7 @@ import Test from '@/pages/Test'
 import Leaderboard from '@/pages/Leaderboard'
 import My from '@/pages/My'
 import Login from '@/pages/Login'
+import Signup from '@/pages/Signup'
 import Good from '@/pages/Good'
 import RequireAuth from '@/components/RequireAuth'
 import RequireTeacher from '@/components/RequireTeacher'
@@ -21,6 +22,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/good" element={<Good />} />
 
       <Route element={<RequireAuth><AppShell /></RequireAuth>}>

@@ -16,9 +16,8 @@ export function normalizeName(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').normalize('NFC')
 }
 
-async function deriveEmail(name: string, grade: Grade): Promise<string> {
-  const input = `${normalizeName(name)}|${grade}`
-  const bytes = new TextEncoder().encode(input)
+async function deriveEmail(name: string): Promise<string> {
+  const bytes = new TextEncoder().encode(normalizeName(name))
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   const hex = Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -36,7 +35,8 @@ type AuthContextValue = {
   user: User | null
   profile: Profile | null
   loading: boolean
-  loginOrSignUp: (name: string, grade: Grade, pin: string) => Promise<LoginResult>
+  logIn: (name: string, pin: string) => Promise<LoginResult>
+  signUp: (name: string, grade: Grade, pin: string) => Promise<LoginResult>
   signOut: () => Promise<void>
 }
 
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (insertError.code === '23505') {
         return {
           ok: false,
-          message: '이미 같은 이름/학년으로 등록된 사람이 있어요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
+          message: '이미 같은 이름으로 등록된 사람이 있어요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
         }
       }
       return { ok: false, message: '가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
@@ -107,9 +107,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true }
   }
 
-  async function loginOrSignUp(name: string, grade: Grade, pin: string): Promise<LoginResult> {
+  async function logIn(name: string, pin: string): Promise<LoginResult> {
     const cleanName = normalizeName(name)
-    const email = await deriveEmail(cleanName, grade)
+    const email = await deriveEmail(cleanName)
+    const password = derivePassword(pin)
+
+    const { data } = await supabase.auth.signInWithPassword({ email, password })
+    if (!data.session) {
+      return { ok: false, message: '이름 또는 PIN을 다시 확인해주세요. 계정이 없다면 회원가입해주세요.' }
+    }
+
+    const userId = data.session.user.id
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, name, grade')
+      .eq('id', userId)
+      .maybeSingle()
+    if (!existingProfile) {
+      // 학년 정보가 없어 이 경로에서는 프로필을 복구할 수 없다 — 회원가입 화면(학년 포함)에서
+      // 다시 진행하면 signUp()의 self-heal 경로가 복구해준다.
+      return {
+        ok: false,
+        message: '계정 정보가 아직 완전하지 않아요. 회원가입 화면에서 다시 진행해주세요.',
+      }
+    }
+    setProfile(existingProfile as Profile)
+    return { ok: true }
+  }
+
+  async function signUp(name: string, grade: Grade, pin: string): Promise<LoginResult> {
+    const cleanName = normalizeName(name)
+    const email = await deriveEmail(cleanName)
     const password = derivePassword(pin)
 
     const signInResult = await supabase.auth.signInWithPassword({ email, password })
@@ -120,9 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('id')
         .eq('id', userId)
         .maybeSingle()
-      if (existingProfile) return { ok: true }
-      // 이메일이 이름+학년의 해시라서, 로그인이 성공했다는 것 자체가 이 이름/학년이
-      // 이 계정의 진짜 정보임을 보증한다 — 안전하게 프로필을 복구할 수 있다.
+      if (existingProfile) {
+        await supabase.auth.signOut()
+        return { ok: false, message: '이미 가입된 이름이에요. 로그인해주세요.' }
+      }
+      // 계정(이메일/PIN)은 이미 있는데 프로필만 없는 고아 계정 — 지금 입력한 학년으로 복구한다.
       return createProfile(userId, cleanName, grade)
     }
 
@@ -131,10 +161,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return createProfile(signUpResult.data.session.user.id, cleanName, grade)
     }
 
-    return {
-      ok: false,
-      message: '이름/학년/PIN을 다시 확인해주세요. 동명이인이면 이름 뒤에 숫자를 붙여 다시 등록해주세요 (예: 홍길동2).',
+    // signIn도 signUp도 실패했는데, 이 이메일이 이미 등록돼 있다는 뜻이면 PIN을 잘못 입력한 것 —
+    // 같은 이름의 새 계정처럼 보이지만 실제로는 본인 계정에 PIN이 안 맞는 상황이다.
+    if (signUpResult.error?.code === 'user_already_exists') {
+      return {
+        ok: false,
+        message: '이미 있는 회원이에요. 비밀번호(PIN)를 잊어버렸다면 선생님에게 문의해주세요.',
+      }
     }
+
+    return { ok: false, message: '가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
   }
 
   async function signOut() {
@@ -142,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user: session?.user ?? null, profile, loading, loginOrSignUp, signOut }}>
+    <AuthContext.Provider value={{ user: session?.user ?? null, profile, loading, logIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

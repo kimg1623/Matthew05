@@ -11,7 +11,7 @@ create table public.profiles (
   name text not null check (char_length(name) between 1 and 20),
   grade text not null check (grade in ('중1', '중2', '중3', '고1', '고2', '고3', '교사')),
   created_at timestamptz not null default now(),
-  unique (name, grade)
+  unique (name)
 );
 
 alter table public.profiles enable row level security;
