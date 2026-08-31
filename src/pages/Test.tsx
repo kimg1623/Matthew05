@@ -11,10 +11,10 @@ const MODE_DESC: Record<TestMode, string> = {
 
 const MODE_STYLE: Record<TestMode, { bg: string; stroke: string; icon: JSX.Element }> = {
   order: {
-    bg: 'bg-gold/[0.15]',
-    stroke: '#E08E3E',
+    bg: 'bg-yellow/[0.18]',
+    stroke: '#92660D',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E08E3E" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#92660D" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect x="3" y="7" width="7" height="7" rx="1.5" />
         <rect x="14" y="7" width="7" height="7" rx="1.5" />
         <path d="M7 14v3M17 14v3" />
@@ -31,10 +31,10 @@ const MODE_STYLE: Record<TestMode, { bg: string; stroke: string; icon: JSX.Eleme
     ),
   },
   blur: {
-    bg: 'bg-coral/[0.15]',
-    stroke: '#E76F51',
+    bg: 'bg-purple/[0.16]',
+    stroke: '#6B4E96',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E76F51" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#6B4E96" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
         <circle cx="12" cy="12" r="2.6" />
       </svg>

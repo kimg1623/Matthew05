@@ -8,6 +8,12 @@ export const MODE_LABEL: Record<TestMode, string> = {
   blur: '문장 가리기',
 }
 
+export const MODE_COLORS: Record<TestMode, { bg: string; text: string; solid: string }> = {
+  order: { bg: 'bg-yellow/[0.18]', text: 'text-yellow-deep', solid: '#92660D' },
+  cloze: { bg: 'bg-teal/[0.15]', text: 'text-teal-deep', solid: '#457B6E' },
+  blur: { bg: 'bg-purple/[0.16]', text: 'text-purple-deep', solid: '#6B4E96' },
+}
+
 export function formatDateTime(iso: string): string {
   const d = new Date(iso)
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`

@@ -1,5 +1,5 @@
 import type { Grade } from '@/lib/auth'
-import { MODE_LABEL, formatDateTime, type TestMode } from '@/lib/testModes'
+import { MODE_COLORS, MODE_LABEL, formatDateTime, type TestMode } from '@/lib/testModes'
 
 const GRADE_BADGE_STYLE: Record<'mid' | 'high' | 'teacher', string> = {
   mid: 'bg-gold/[0.15] text-gold-deep',
@@ -21,8 +21,9 @@ export function GradeBadge({ grade }: { grade: Grade }) {
 }
 
 export function ModeBadge({ mode }: { mode: TestMode }) {
+  const colors = MODE_COLORS[mode]
   return (
-    <span className="shrink-0 rounded-full bg-teal/[0.15] px-2 py-0.5 text-[10.5px] font-bold text-teal-deep">
+    <span className={'shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold ' + colors.bg + ' ' + colors.text}>
       {MODE_LABEL[mode]}
     </span>
   )

@@ -9,6 +9,10 @@
     "teal": "#5B9A8B",
     "tealDeep": "#457B6E",
     "coral": "#E76F51",
+    "yellow": "#F0B429",
+    "yellowDeep": "#92660D",
+    "purple": "#8B6BB5",
+    "purpleDeep": "#6B4E96",
     "white": "#FFFFFF",
     "textDark": "#3D3D3D",
     "textMuted": "#7A7A7A"

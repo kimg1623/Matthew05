@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth'
 import Header from '@/components/Header'
 import ChapterCard from '@/components/ChapterCard'
 import ToggleSwitch from '@/components/ToggleSwitch'
-import { MODE_LABEL, type TestMode } from '@/lib/testModes'
+import { MODE_COLORS, MODE_LABEL, type TestMode } from '@/lib/testModes'
 
 type LocationState = {
   chapterN: number
@@ -82,12 +82,12 @@ export default function TestComplete() {
             </svg>
             <span className="text-[11.5px] font-bold text-gold-deep">{formatToday()}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-teal/[0.12] px-3 py-[7px]">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#457B6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0">
+          <div className={'flex items-center gap-1.5 rounded-full px-3 py-[7px] ' + MODE_COLORS[testMode].bg}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={MODE_COLORS[testMode].solid} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0">
               <path d="M12 20h9" />
               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
-            <span className="text-[11.5px] font-bold text-teal-deep">{MODE_LABEL[testMode] ?? testMode}</span>
+            <span className={'text-[11.5px] font-bold ' + MODE_COLORS[testMode].text}>{MODE_LABEL[testMode] ?? testMode}</span>
           </div>
         </div>
 

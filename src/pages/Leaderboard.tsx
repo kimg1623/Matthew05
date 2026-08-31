@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { GradeBadge, ModeBadge, DateBadge } from '@/components/Badges'
 import StudentEditModal from '@/components/StudentEditModal'
+import StudentDetailModal from '@/components/StudentDetailModal'
 import { supabase } from '@/lib/supabase'
 import { GRADES, type Grade } from '@/lib/auth'
-import { MODE_LABEL, TEST_MODES, formatDateTime, accuracyLabel, type TestMode } from '@/lib/testModes'
+import { MODE_COLORS, MODE_LABEL, TEST_MODES, formatDateTime, accuracyLabel, type TestMode } from '@/lib/testModes'
 
 type SummaryRow = {
   user_id: string
@@ -82,7 +83,8 @@ function SummaryView() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<(typeof GRADE_FILTERS)[number]>('전체')
   const [sortBy, setSortBy] = useState<SortBy>('count')
-  const [editingRow, setEditingRow] = useState<SummaryRow | null>(null)
+  const [selectedRow, setSelectedRow] = useState<SummaryRow | null>(null)
+  const [modalMode, setModalMode] = useState<'detail' | 'edit'>('detail')
 
   useEffect(() => {
     let active = true
@@ -140,7 +142,10 @@ function SummaryView() {
         {sorted.map((row, i) => (
           <button
             key={row.user_id}
-            onClick={() => setEditingRow(row)}
+            onClick={() => {
+              setSelectedRow(row)
+              setModalMode('detail')
+            }}
             className="flex items-center gap-3 rounded-2xl bg-white p-3.5 px-4 text-left shadow-[0_2px_8px_rgba(31,43,64,0.06)]"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/[0.15] text-[13px] font-extrabold text-gold-deep">
@@ -167,17 +172,26 @@ function SummaryView() {
         ))}
       </div>
 
-      {editingRow && (
+      {selectedRow && modalMode === 'detail' && (
+        <StudentDetailModal
+          userId={selectedRow.user_id}
+          name={selectedRow.name}
+          grade={selectedRow.grade}
+          onClose={() => setSelectedRow(null)}
+          onEdit={() => setModalMode('edit')}
+        />
+      )}
+
+      {selectedRow && modalMode === 'edit' && (
         <StudentEditModal
-          userId={editingRow.user_id}
-          currentName={editingRow.name}
-          currentGrade={editingRow.grade}
-          onClose={() => setEditingRow(null)}
+          userId={selectedRow.user_id}
+          currentName={selectedRow.name}
+          currentGrade={selectedRow.grade}
+          onClose={() => setModalMode('detail')}
           onSaved={(updated) => {
-            setRows((prev) =>
-              prev.map((r) => (r.user_id === editingRow.user_id ? { ...r, ...updated } : r)),
-            )
-            setEditingRow(null)
+            setRows((prev) => prev.map((r) => (r.user_id === selectedRow.user_id ? { ...r, ...updated } : r)))
+            setSelectedRow((prev) => (prev ? { ...prev, ...updated } : prev))
+            setModalMode('detail')
           }}
         />
       )}
@@ -277,18 +291,20 @@ function ModeView() {
   return (
     <>
       <div className="flex gap-1.5 px-4 pt-3">
-        {TEST_MODES.map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={
-              'flex-1 rounded-full py-1.5 text-center text-[12.5px] font-bold ' +
-              (mode === m ? 'bg-navy-deep text-cream' : 'bg-white text-text-muted')
-            }
-          >
-            {MODE_LABEL[m]}
-          </button>
-        ))}
+        {TEST_MODES.map((m) => {
+          const colors = MODE_COLORS[m]
+          const active = mode === m
+          return (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              style={active ? { backgroundColor: colors.solid } : undefined}
+              className={'flex-1 rounded-full py-1.5 text-center text-[12.5px] font-bold ' + (active ? 'text-cream' : colors.bg + ' ' + colors.text)}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          )
+        })}
       </div>
 
       <div className="flex flex-col gap-2.5 px-4 pb-8 pt-4">
