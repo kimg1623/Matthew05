@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getVerseText, getWeek } from '@/lib/data'
-import { accentNameForChapter, coverUrlForChapter, groupVersesByIcon } from '@/lib/icons'
+import {
+  accentHexForChapter,
+  accentNameForChapter,
+  accentTextHexForChapter,
+  accentTintForChapter,
+  coverUrlForChapter,
+  groupVersesByIcon,
+} from '@/lib/icons'
 
 export default function ChapterDetail() {
   const { n } = useParams()
@@ -15,6 +22,9 @@ export default function ChapterDetail() {
   const verseNumbers = getChapterVerseNumbers(week)
   const groups = groupVersesByIcon(verseNumbers)
   const accentName = accentNameForChapter(chapterN)
+  const accentHex = accentHexForChapter(chapterN)
+  const accentTextHex = accentTextHexForChapter(chapterN)
+  const accentTint = accentTintForChapter(chapterN, 0.15)
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[480px] flex-col bg-cream">
@@ -43,11 +53,16 @@ export default function ChapterDetail() {
           <span className="text-xs font-bold text-white">그림크게보기</span>
         </button>
         <div className="absolute bottom-4 left-5 right-5">
-          <span className="inline-block rounded-full bg-gold px-2.5 py-1 text-xs font-bold text-navy-deep">
+          <span
+            className="inline-block rounded-full px-2.5 py-1 text-xs font-bold text-navy-deep"
+            style={{ backgroundColor: accentHex }}
+          >
             {chapterN}챕터
           </span>
           <div className="mt-2.5 text-xl font-extrabold leading-tight text-white">{week.title}</div>
-          <div className="mt-1 text-[12.5px] font-semibold text-gold">{week.range}</div>
+          <div className="mt-1 text-[12.5px] font-semibold" style={{ color: accentHex }}>
+            {week.range}
+          </div>
         </div>
       </div>
 
@@ -70,7 +85,10 @@ export default function ChapterDetail() {
             <div className="flex flex-1 flex-col gap-2 pt-[3px]">
               {group.verseNumbers.map((v) => (
                 <div key={v} className="flex gap-2">
-                  <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gold/[0.15] text-[11px] font-bold text-gold-deep">
+                  <span
+                    className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                    style={{ backgroundColor: accentTint, color: accentTextHex }}
+                  >
                     {v}
                   </span>
                   <span className="text-sm leading-relaxed text-text-dark">{getVerseText(v)}</span>
@@ -111,11 +129,16 @@ export default function ChapterDetail() {
             <img src={coverUrlForChapter(chapterN)} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-navy-deep/0 via-navy-deep/0 to-navy-deep/[0.85]" />
             <div className="absolute bottom-[18px] left-5 right-5">
-              <span className="inline-block rounded-full bg-gold px-3 py-[5px] text-[13px] font-bold text-navy-deep">
+              <span
+                className="inline-block rounded-full px-3 py-[5px] text-[13px] font-bold text-navy-deep"
+                style={{ backgroundColor: accentHex }}
+              >
                 {chapterN}챕터
               </span>
               <div className="mt-2.5 text-[23px] font-extrabold leading-tight text-white">{week.title}</div>
-              <div className="mt-1 text-[13px] font-semibold text-gold">{week.range}</div>
+              <div className="mt-1 text-[13px] font-semibold" style={{ color: accentHex }}>
+                {week.range}
+              </div>
             </div>
           </div>
         </div>

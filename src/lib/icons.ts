@@ -25,6 +25,14 @@ export function accentTextHexForChapter(chapterN: number): string {
   return ACCENT_TEXT_HEX_BY_NAME[accentNameForChapter(chapterN)]
 }
 
+export function accentTintForChapter(chapterN: number, alpha: number): string {
+  const hex = accentHexForChapter(chapterN)
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export function iconUrlForVerse(verseNumber: number, chapterN: number): string {
   const iconName = verseIconMap[String(verseNumber)] ?? 'scroll'
   const colorName = accentNameForChapter(chapterN)
