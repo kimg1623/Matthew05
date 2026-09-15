@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GradeBadge, ModeBadge, DateBadge } from '@/components/Badges'
 import StudentEditModal from '@/components/StudentEditModal'
 import StudentDetailModal from '@/components/StudentDetailModal'
@@ -199,29 +199,87 @@ function SummaryView() {
   )
 }
 
+const POLL_INTERVAL_MS = 5000
+
 function DateView() {
   const [date, setDate] = useState(todayDateString())
   const [rows, setRows] = useState<AttemptRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
+  // 날짜변경/수동새로고침/폴링이 겹칠 때 "가장 나중에 시작한 요청"만 반영하기 위한 카운터.
+  // 컴포넌트가 사라지면 -1로 무효화해서, 늦게 도착한 응답이 이미 언마운트된 화면에 반영되지 않게 한다.
+  const requestIdRef = useRef(0)
   useEffect(() => {
-    let active = true
-    setLoading(true)
+    return () => {
+      requestIdRef.current = -1
+    }
+  }, [])
+
+  async function fetchRows(showLoading: boolean) {
+    const myId = ++requestIdRef.current
+    if (showLoading) setLoading(true)
+    else setRefreshing(true)
+
     const start = new Date(`${date}T00:00:00`).toISOString()
     const end = new Date(`${date}T23:59:59.999`).toISOString()
-    supabase
+    const { data, error } = await supabase
       .from('attempt_feed')
       .select('*')
       .gte('created_at', start)
       .lte('created_at', end)
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (!active) return
-        setRows((data ?? []) as AttemptRow[])
-        setLoading(false)
-      })
+
+    // 이 요청이 시작된 뒤로 더 최신 요청이 시작됐거나 컴포넌트가 사라졌으면 결과를 버린다.
+    if (requestIdRef.current !== myId) return
+
+    if (!error) {
+      setRows((data ?? []) as AttemptRow[])
+      setLastUpdated(new Date())
+    }
+    // 자기가 켠 스피너만 끄면, 새치기당해 폐기된 요청의 스피너가 영영 안 꺼질 수 있다 —
+    // 최신 요청일 때는 어느 쪽이 켰든 둘 다 끈다.
+    setLoading(false)
+    setRefreshing(false)
+  }
+
+  const fetchRowsRef = useRef(fetchRows)
+  fetchRowsRef.current = fetchRows
+
+  useEffect(() => {
+    fetchRows(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date])
+
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null
+
+    function start() {
+      if (intervalId) return
+      intervalId = setInterval(() => fetchRowsRef.current(false), POLL_INTERVAL_MS)
+    }
+    function stop() {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    }
+    function handleVisibility() {
+      if (document.hidden) {
+        stop()
+      } else {
+        fetchRowsRef.current(false)
+        start()
+      }
+    }
+
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
-      active = false
+      stop()
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [date])
 
@@ -235,6 +293,30 @@ function DateView() {
           onChange={(e) => setDate(e.target.value)}
           className="w-full rounded-[10px] border-[1.5px] border-gold/50 bg-white px-3.5 py-2.5 text-[14px] font-bold text-navy outline-none"
         />
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[11px] text-text-muted">
+            {lastUpdated ? `마지막 업데이트 ${formatDateTime(lastUpdated.toISOString())}` : ''}
+          </span>
+          <button
+            onClick={() => fetchRows(false)}
+            disabled={refreshing}
+            className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-text-muted shadow-[0_2px_6px_rgba(31,43,64,0.08)] disabled:opacity-50"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={'h-3 w-3 ' + (refreshing ? 'animate-spin' : '')}
+            >
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <path d="M21 3v6h-6" />
+            </svg>
+            새로고침
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2.5 px-4 pb-8 pt-4">
