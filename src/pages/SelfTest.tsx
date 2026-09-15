@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getWeek } from '@/lib/data'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import { enqueuePendingAttempt } from '@/lib/pendingAttempts'
 import Header from '@/components/Header'
 import TabSwitcher, { type TestMode } from '@/components/TabSwitcher'
 import ProgressBar from '@/components/ProgressBar'
@@ -40,7 +41,7 @@ export default function SelfTest() {
   const percent = total === 0 ? 0 : Math.round((progress / total) * 100)
 
   async function saveAttempt(result: FinishResult) {
-    if (!user || result.total <= 0) return true
+    if (!user || result.total <= 0) return
     const row = {
       user_id: user.id,
       chapter: chapterN,
@@ -54,7 +55,16 @@ export default function SelfTest() {
       // 네트워크 순간 끊김 등 일시적 오류일 수 있으니 한 번은 조용히 재시도한다.
       ;({ error } = await supabase.from('test_attempts').insert(row))
     }
-    return !error
+    if (!error) return
+
+    // 여기까지 실패하면 오프라인이거나 서버 쪽 일시 장애일 가능성이 높다. 학생을 붙잡아두는 대신
+    // 기기에 저장해두고 완료 화면으로 보낸다 — 로그인 직후/인터넷 재연결 시 자동으로 재전송된다.
+    try {
+      enqueuePendingAttempt(row)
+    } catch {
+      // localStorage까지 막힌 극히 드문 경우에만 학생에게 직접 재시도를 요청한다.
+      throw new Error('save-failed')
+    }
   }
 
   async function handleFinish(result: FinishResult) {
@@ -62,10 +72,9 @@ export default function SelfTest() {
     finishedRef.current = true
     setSaveError(false)
 
-    const saved = await saveAttempt(result)
-    if (!saved) {
-      // 저장 실패를 그냥 넘기면 학생은 완료된 줄 알지만 선생님 쪽엔 기록이 안 남는다 —
-      // 완료 화면으로 보내지 않고 같은 버튼을 다시 누르게 해서 재시도를 유도한다.
+    try {
+      await saveAttempt(result)
+    } catch {
       finishedRef.current = false
       setSaveError(true)
       return

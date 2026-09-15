@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { flushPendingAttempts } from '@/lib/pendingAttempts'
 
 export const GRADES = ['중1', '중2', '중3', '고1', '고2', '고3', '교사'] as const
 export type Grade = (typeof GRADES)[number]
@@ -88,6 +89,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // RequireTeacher 등에서 "프로필이 아직 null이라 교사가 아니다"로 오판하지 않는다.
   const loading = sessionLoading || (Boolean(session) && profileFetchedFor !== session?.user.id)
 
+  // 셀프테스트 저장이 오프라인 등으로 실패하면 기기에 큐로 쌓아두는데, 로그인 직후와
+  // 인터넷이 다시 연결되는 순간 자동으로 다시 보내본다 — 학생이 따로 재시도할 필요가 없게.
+  useEffect(() => {
+    const userId = session?.user.id
+    if (!userId) return
+    flushPendingAttempts(userId)
+    const handleOnline = () => flushPendingAttempts(userId)
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [session?.user.id])
+
   // signUp 직후 profiles insert가 실패해 세션은 있지만 프로필이 없는 "고아 계정"이 될 수 있다
   // (과거 버그, 혹은 드문 네트워크 오류). signIn 경로에서도 이 상태를 복구할 수 있어야
   // 해당 계정이 영구히 로그인 불가 상태로 고정되지 않는다 — 그래서 두 경로가 이 함수를 공유한다.
@@ -174,6 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    // 기기를 다른 학생에게 넘기기 전에, 이 계정 몫으로 쌓여있던 큐를 마지막으로 한 번 더 보내본다.
+    if (session?.user.id) await flushPendingAttempts(session.user.id)
     await supabase.auth.signOut()
   }
 
