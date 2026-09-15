@@ -43,6 +43,16 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    to: '/achievements',
+    label: '업적',
+    icon: (active) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke={stroke(active)} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <circle cx="12" cy="9" r="5.5" />
+        <path d="M8.5 13.8 7 21l5-2.5 5 2.5-1.5-7.2" />
+      </svg>
+    ),
+  },
+  {
     to: '/my',
     label: 'MY',
     icon: (active) => (

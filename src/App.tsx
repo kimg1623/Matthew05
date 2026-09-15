@@ -6,6 +6,7 @@ import SelfTest from '@/pages/SelfTest'
 import TestComplete from '@/pages/TestComplete'
 import Test from '@/pages/Test'
 import Leaderboard from '@/pages/Leaderboard'
+import Achievements from '@/pages/Achievements'
 import My from '@/pages/My'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/test" element={<Test />} />
         <Route path="/leaderboard" element={<RequireTeacher><Leaderboard /></RequireTeacher>} />
+        <Route path="/achievements" element={<Achievements />} />
         <Route path="/my" element={<My />} />
       </Route>
 
