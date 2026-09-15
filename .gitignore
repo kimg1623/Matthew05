@@ -4,3 +4,6 @@ dist
 *.local
 supabase/.temp
 CLAUDE.md
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
