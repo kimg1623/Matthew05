@@ -38,7 +38,7 @@ export default function TestComplete() {
 
   return (
     <div className="mx-auto min-h-screen max-w-[480px] bg-cream">
-      <Header title="셀프테스트 완료" />
+      <Header title="셀프테스트 완료" backTo={`/chapter/${chapterN}`} />
 
       <div className="px-5 pb-2 pt-6 text-center">
         <div className="mx-auto h-[52px] w-[52px]">

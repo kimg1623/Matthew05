@@ -86,7 +86,7 @@ export default function SelfTest() {
 
   return (
     <div className="mx-auto min-h-screen max-w-[480px] bg-cream">
-      <Header title={`${chapterN}챕터 셀프테스트`} subtitle={week.title}>
+      <Header title={`${chapterN}챕터 셀프테스트`} subtitle={week.title} backTo={`/chapter/${chapterN}`}>
         <ProgressBar label={`${progress}/${total} ${PROGRESS_UNIT[testMode]}`} percent={percent} />
       </Header>
       <TabSwitcher chapterN={chapterN} activeMode={testMode} />

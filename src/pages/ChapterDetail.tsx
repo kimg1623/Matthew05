@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { getChapterVerseNumbers, getVerseText, getWeek } from '@/lib/data'
+import { useSmartBack } from '@/lib/useSmartBack'
 import {
   accentHexForChapter,
   accentNameForChapter,
@@ -14,7 +15,7 @@ export default function ChapterDetail() {
   const { n } = useParams()
   const chapterN = Number(n)
   const week = getWeek(chapterN)
-  const navigate = useNavigate()
+  const goBack = useSmartBack('/')
   const [zoomed, setZoomed] = useState(false)
 
   if (!week) return <Navigate to="/" replace />
@@ -32,7 +33,7 @@ export default function ChapterDetail() {
         <img src={coverUrlForChapter(chapterN)} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-navy-deep/0 via-navy-deep/10 to-navy-deep/[0.88]" />
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="absolute left-4 top-4 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white/[0.4]"
           aria-label="뒤로가기"
         >

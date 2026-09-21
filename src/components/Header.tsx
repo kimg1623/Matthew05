@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useSmartBack } from '@/lib/useSmartBack'
 
 type HeaderProps = {
   title: string
   subtitle?: string
+  backTo?: string
   children?: ReactNode
 }
 
-export default function Header({ title, subtitle, children }: HeaderProps) {
-  const navigate = useNavigate()
+export default function Header({ title, subtitle, backTo = '/', children }: HeaderProps) {
+  const goBack = useSmartBack(backTo)
   return (
     <div className="bg-navy-deep px-5 pb-6 pt-5">
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/10"
           aria-label="뒤로가기"
         >
