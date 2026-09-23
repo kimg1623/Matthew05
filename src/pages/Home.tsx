@@ -15,25 +15,42 @@ export default function Home() {
         <div className="mt-3.5 h-[3px] w-10 rounded bg-gold" />
         <div className="mt-3.5 text-[13px] text-cream/65">8챕터, 48절 — WING 청소년부 함께 완주해요</div>
 
-        <div className="relative mt-4 inline-block">
-          <button
-            onClick={() => setGalleryOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-gold/[0.35] bg-gold/[0.14] py-2.5 pl-3 pr-3.5"
+        <div className="mt-4 flex flex-wrap gap-2">
+          <div className="relative inline-block">
+            <button
+              onClick={() => setGalleryOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-gold/[0.35] bg-gold/[0.14] py-2.5 pl-3 pr-3.5"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F4A259" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
+                <rect x="2.5" y="5.5" width="14" height="14" rx="2.2" />
+                <circle cx="7.2" cy="10.2" r="1.3" />
+                <path d="M4.5 16.5l3.8-3.8a1.6 1.6 0 0 1 2.2 0l3.5 3.5" />
+                <path d="M9 5.5V4.8a1.8 1.8 0 0 1 1.8-1.8h9.4A1.8 1.8 0 0 1 22 4.8v9.4a1.8 1.8 0 0 1-1.8 1.8h-0.7" />
+              </svg>
+              <span className="text-[13.5px] font-bold text-gold">그림으로 성경읽기</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F4A259" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-[15px] w-[15px]">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+            <span className="absolute -right-2 -top-2 rounded-full bg-coral px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white shadow-[0_1px_3px_rgba(15,20,30,0.35)]">
+              NEW
+            </span>
+          </div>
+
+          <Link
+            to="/focus"
+            className="inline-flex items-center gap-2 rounded-full border border-teal/[0.4] bg-teal/[0.16] py-2.5 pl-3 pr-3.5"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="#F4A259" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
-              <rect x="2.5" y="5.5" width="14" height="14" rx="2.2" />
-              <circle cx="7.2" cy="10.2" r="1.3" />
-              <path d="M4.5 16.5l3.8-3.8a1.6 1.6 0 0 1 2.2 0l3.5 3.5" />
-              <path d="M9 5.5V4.8a1.8 1.8 0 0 1 1.8-1.8h9.4A1.8 1.8 0 0 1 22 4.8v9.4a1.8 1.8 0 0 1-1.8 1.8h-0.7" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="#5B9A8B" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
+              <rect x="3.5" y="10" width="4" height="9" rx="1" />
+              <rect x="10" y="5.5" width="4" height="13.5" rx="1" />
+              <rect x="16.5" y="13" width="4" height="6" rx="1" />
             </svg>
-            <span className="text-[13.5px] font-bold text-gold">그림으로 성경읽기</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#F4A259" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-[15px] w-[15px]">
+            <span className="text-[13.5px] font-bold text-teal-deep">암송집중데이</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#5B9A8B" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" className="h-[15px] w-[15px]">
               <path d="M9 6l6 6-6 6" />
             </svg>
-          </button>
-          <span className="absolute -right-2 -top-2 rounded-full bg-coral px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white shadow-[0_1px_3px_rgba(15,20,30,0.35)]">
-            NEW
-          </span>
+          </Link>
         </div>
       </div>
 

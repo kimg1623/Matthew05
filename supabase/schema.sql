@@ -108,3 +108,130 @@ join public.profiles p on p.id = a.user_id;
 
 grant select on public.attempt_feed to authenticated;
 revoke select on public.attempt_feed from anon;
+
+-- ─────────────────────────────────────────────
+-- event_progress: "암송집중데이"(성경구절쌓기) 교실용 실시간 말판 게임 상태.
+-- test_attempts와 완전히 분리된, 언제든 리셋 가능한 일회성 게임 상태다 (영구 기록 아님).
+-- 공유화면(/focus-share)이 로그인 없이 실시간 구독해야 하므로 anon도 읽을 수 있다.
+-- 클라이언트가 UPDATE로 position을 임의 조작하지 못하도록 UPDATE 정책을 아예 두지 않고,
+-- "현재 위치+1만" 허용하는 increment_event_progress() RPC로만 전진시킨다.
+-- 학생이 "모드 선택으로 돌아가기"를 누르면 reset_own_event_progress()로 본인 위치만 0으로.
+-- 라운드 전체 리셋(새 범위로 열기)은 open-event-round 엣지 함수(service role)로만 가능하다.
+-- ─────────────────────────────────────────────
+create table public.event_progress (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  position int not null default 0 check (position >= 0 and position <= 48),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.event_progress enable row level security;
+
+create policy "event_progress_select_authenticated"
+  on public.event_progress for select to authenticated using (true);
+create policy "event_progress_select_anon"
+  on public.event_progress for select to anon using (true);
+
+-- 학생이 이벤트 화면에 처음 들어올 때 자기 행을 0으로 1회 생성
+create policy "event_progress_insert_own_at_zero"
+  on public.event_progress for insert
+  to authenticated
+  with check (user_id = auth.uid() and position = 0);
+
+-- "돌아가기"로 참여화면을 나가면 본인 행을 지워서 공유화면 말판에서도 사라지게 한다
+create policy "event_progress_delete_own"
+  on public.event_progress for delete
+  to authenticated
+  using (user_id = auth.uid());
+
+grant select, insert, delete on public.event_progress to authenticated;
+grant select on public.event_progress to anon;
+-- ⚠️ UPDATE 정책은 의도적으로 없음 — 전진/리셋은 아래 RPC로만.
+
+-- ─────────────────────────────────────────────
+-- event_round: 지금 라운드가 열려있는지 + 절 범위(시작절~끝절)를 담는 싱글턴 행.
+-- 공유화면(anon)과 참여화면(authenticated) 둘 다 실시간 구독한다.
+-- 쓰기는 open-event-round 엣지 함수(service role)로만.
+-- ─────────────────────────────────────────────
+create table public.event_round (
+  id boolean primary key default true,
+  is_open boolean not null default false,
+  start_verse int,
+  end_verse int,
+  updated_at timestamptz not null default now(),
+  constraint event_round_singleton check (id),
+  constraint event_round_range check (
+    (is_open = false and start_verse is null and end_verse is null)
+    or (is_open = true and start_verse is not null and end_verse is not null
+        and start_verse <= end_verse and start_verse >= 1 and end_verse <= 48)
+  )
+);
+
+insert into public.event_round (id, is_open) values (true, false);
+
+alter table public.event_round enable row level security;
+create policy "event_round_select_all"
+  on public.event_round for select to anon, authenticated using (true);
+grant select on public.event_round to anon, authenticated;
+-- 쓰기 정책 없음 — open-event-round 엣지 함수(service role)로만 변경.
+
+-- 공유화면(로그인 없음) 전용 뷰: 참가자의 이름 + 위치만 노출한다.
+-- profiles 테이블 자체는 anon에게 열려있지 않으므로(authenticated만 select 가능),
+-- event_progress에 profiles를 직접 embed하면 anon 요청에서는 이름이 비어 온다 —
+-- 이 뷰는 소유자 권한으로 실행되는 일반 뷰라 그 제한을 우회해 이름만 안전하게 노출한다.
+-- leaderboard/attempt_feed와 반대로 이 뷰는 anon에게도 의도적으로 공개한다.
+create view public.event_board as
+select ep.user_id, ep.position, p.name
+from public.event_progress ep
+join public.profiles p on p.id = ep.user_id;
+
+grant select on public.event_board to anon, authenticated;
+
+create or replace function public.increment_event_progress(p_expected_position int)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_new_position int;
+  v_round_len int;
+begin
+  select (end_verse - start_verse + 1) into v_round_len
+  from public.event_round where id = true and is_open = true;
+
+  if v_round_len is null then
+    return null; -- 열린 라운드가 없으면 아무것도 하지 않는다
+  end if;
+
+  update public.event_progress
+  set position = p_expected_position + 1, updated_at = now()
+  where user_id = auth.uid()
+    and position = p_expected_position
+    and p_expected_position < v_round_len
+  returning position into v_new_position;
+
+  return v_new_position; -- 조건이 안 맞으면(중복 호출/경쟁 상황) null
+end;
+$$;
+
+revoke all on function public.increment_event_progress(int) from public;
+grant execute on function public.increment_event_progress(int) to authenticated;
+
+-- 학생이 "모드 선택으로 돌아가기"를 누르면 본인 진행만 0으로 되돌린다
+-- (다른 사람 행은 절대 건드릴 수 없음 — auth.uid()로 고정).
+create or replace function public.reset_own_event_progress()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.event_progress
+  set position = 0, updated_at = now()
+  where user_id = auth.uid();
+$$;
+
+revoke all on function public.reset_own_event_progress() from public;
+grant execute on function public.reset_own_event_progress() to authenticated;
+
+-- ⚠️ event_progress와 event_round 둘 다, Supabase 대시보드 Database > Replication에서
+--    Replication을 반드시 켜야 postgres_changes 실시간 구독이 동작한다.

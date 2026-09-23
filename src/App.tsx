@@ -11,6 +11,8 @@ import My from '@/pages/My'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import Good from '@/pages/Good'
+import Event from '@/pages/Event'
+import EventBoard from '@/pages/EventBoard'
 import RequireAuth from '@/components/RequireAuth'
 import RequireTeacher from '@/components/RequireTeacher'
 import AppShell from '@/components/AppShell'
@@ -25,6 +27,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/good" element={<Good />} />
+      <Route path="/focus-share" element={<EventBoard />} />
 
       <Route element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route path="/" element={<Home />} />
@@ -33,6 +36,8 @@ export default function App() {
         <Route path="/achievements" element={<Achievements />} />
         <Route path="/my" element={<My />} />
       </Route>
+
+      <Route path="/focus" element={<RequireAuth><Event /></RequireAuth>} />
 
       <Route path="/chapter/all" element={<RequireAuth><ChapterAll /></RequireAuth>} />
       <Route path="/chapter/:n" element={<RequireAuth><ChapterDetail /></RequireAuth>} />
