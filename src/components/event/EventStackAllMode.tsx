@@ -42,14 +42,11 @@ export default function EventStackAllMode({ verseNumbers, initialPosition, onPro
   )
 
   if (index >= verseNumbers.length) {
+    // 끝까지 쌓은 뒤에는 "모드 선택으로 돌아가기"를 없애서 완료 상태가 실수로 초기화되지 않게 한다.
     return (
-      <div>
-        {backButton}
-        <div className="py-14 text-center">
-          <div className="text-[17px] font-extrabold text-navy">🎉 다 쌓았어요!</div>
-          <div className="mt-2 text-[12.5px] text-text-muted">공유 화면에서 내 말이 얼마나 전진했는지 확인해보세요.</div>
-        </div>
-        {showBackConfirm && <EventBackConfirmModal onCancel={() => setShowBackConfirm(false)} onConfirm={onBack} />}
+      <div className="py-14 text-center">
+        <div className="text-[17px] font-extrabold text-navy">🎉 다 쌓았어요!</div>
+        <div className="mt-2 text-[12.5px] text-text-muted">공유 화면에서 내 말이 얼마나 전진했는지 확인해보세요.</div>
       </div>
     )
   }
@@ -86,14 +83,24 @@ export default function EventStackAllMode({ verseNumbers, initialPosition, onPro
             key={v}
             className={
               'origin-[85%_15%] overflow-hidden rounded-2xl bg-white p-3.5 shadow-[0_3px_10px_rgba(31,43,64,0.06)] transition-all duration-500 ' +
-              (i === 0 && flying ? 'pointer-events-none m-0 max-h-0 scale-[0.15] rotate-6 translate-x-32 -translate-y-32 py-0 opacity-0' : 'max-h-[400px]')
+              (i === 0 && flying
+                ? 'pointer-events-none m-0 max-h-0 scale-[0.15] rotate-6 translate-x-32 -translate-y-32 py-0 opacity-0'
+                : 'max-h-[400px]') +
+              (i > 0 ? ' opacity-45' : '')
             }
           >
             <span className="rounded-full bg-gold/[0.14] px-2.5 py-0.5 text-[11px] font-extrabold text-gold-deep">{v}절</span>
             {i === 0 ? (
               <EventChunkOrderQuestion key={v} verseNumber={v} onCorrect={handleCorrect} />
             ) : (
-              <div className="mt-2 text-[14.5px] leading-relaxed text-navy">{getVerseText(v)}</div>
+              // 아직 오지 않은 절은 본문을 보여주지 않고 잠금 카드로만 표시한다(정답 힌트가 되지 않도록).
+              <div className="mt-2 flex items-center gap-1.5 text-[12px] text-text-muted">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7A7A7A" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                이전 절부터 순서대로 진행해요
+              </div>
             )}
           </div>
         ))}

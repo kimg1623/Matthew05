@@ -1,10 +1,13 @@
-// 교사가 "암송집중데이" 공유화면(/focus-share)에서 시작절~끝절을 입력하고 "시작"을 누르면
-// 호출되는 관리자 함수. event_progress에는 UPDATE 정책 자체가 없고(전진은
-// increment_event_progress RPC로만), event_round도 쓰기 정책이 없으므로 라운드를
-// 여는 것(=참가자 전원 리셋 + 새 범위 지정)은 여기 service role로만 가능하다.
+// "암송집중데이" 공유화면(/focus-racing, /focus-card)에서 시작절~끝절을 입력하고 "시작"을 누르면
+// 호출되는 함수. event_progress에는 UPDATE 정책 자체가 없고(전진은 increment_event_progress
+// RPC로만), event_round도 쓰기 정책이 없으므로 라운드를 여는 것(=참가자 전원 리셋 + 새 범위 지정)은
+// 여기 service role로만 가능하다.
+//
+// ⚠️ 공유화면은 로그인 없이 쓰는 화면이라 이 함수도 호출자 인증을 하지 않는다 —
+//    공유화면 주소를 아는 사람은 누구나 라운드를 열고 닫을 수 있다는 뜻이다(의도된 선택).
 //
 // 배포: npx supabase functions deploy open-event-round --project-ref <프로젝트-ref>
-// SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY는 Supabase가 자동으로 주입한다.
+// SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY는 Supabase가 자동으로 주입한다.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -24,32 +27,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return json({ ok: false, error: '로그인이 필요해요.' })
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-    // 호출자 본인 권한으로 동작하는 클라이언트 — "진짜 교사가 맞는지" 확인용
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const { data: userData, error: userError } = await callerClient.auth.getUser()
-    if (userError || !userData.user) {
-      return json({ ok: false, error: '로그인이 필요해요.' })
-    }
-
-    const { data: callerProfile } = await callerClient
-      .from('profiles')
-      .select('grade')
-      .eq('id', userData.user.id)
-      .maybeSingle()
-
-    if (callerProfile?.grade !== '교사') {
-      return json({ ok: false, error: '교사만 사용할 수 있어요.' })
-    }
-
     const body = await req.json().catch(() => null)
     const startVerse = Number(body?.startVerse)
     const endVerse = Number(body?.endVerse)
@@ -64,8 +41,7 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: '절 범위를 다시 확인해주세요.' })
     }
 
-    // 이후 작업은 RLS를 우회하는 service role로 수행 (호출자 검증은 이미 끝남)
-    const admin = createClient(supabaseUrl, serviceRoleKey)
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     const { error: roundError } = await admin
       .from('event_round')

@@ -30,14 +30,11 @@ export default function EventStackOneMode({ verseNumbers, initialPosition, onPro
   )
 
   if (index >= verseNumbers.length) {
+    // 끝까지 쌓은 뒤에는 "모드 선택으로 돌아가기"를 없애서 완료 상태가 실수로 초기화되지 않게 한다.
     return (
-      <div>
-        {backButton}
-        <div className="py-14 text-center">
-          <div className="text-[17px] font-extrabold text-navy">🎉 다 쌓았어요!</div>
-          <div className="mt-2 text-[12.5px] text-text-muted">공유 화면에서 내 말이 얼마나 전진했는지 확인해보세요.</div>
-        </div>
-        {showBackConfirm && <EventBackConfirmModal onCancel={() => setShowBackConfirm(false)} onConfirm={onBack} />}
+      <div className="py-14 text-center">
+        <div className="text-[17px] font-extrabold text-navy">🎉 다 쌓았어요!</div>
+        <div className="mt-2 text-[12.5px] text-text-muted">공유 화면에서 내 말이 얼마나 전진했는지 확인해보세요.</div>
       </div>
     )
   }

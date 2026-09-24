@@ -112,16 +112,18 @@ revoke select on public.attempt_feed from anon;
 -- ─────────────────────────────────────────────
 -- event_progress: "암송집중데이"(성경구절쌓기) 교실용 실시간 말판 게임 상태.
 -- test_attempts와 완전히 분리된, 언제든 리셋 가능한 일회성 게임 상태다 (영구 기록 아님).
--- 공유화면(/focus-share)이 로그인 없이 실시간 구독해야 하므로 anon도 읽을 수 있다.
+-- 공유화면(/focus-racing 등)이 로그인 없이 실시간 구독해야 하므로 anon도 읽을 수 있다.
 -- 클라이언트가 UPDATE로 position을 임의 조작하지 못하도록 UPDATE 정책을 아예 두지 않고,
 -- "현재 위치+1만" 허용하는 increment_event_progress() RPC로만 전진시킨다.
--- 학생이 "모드 선택으로 돌아가기"를 누르면 reset_own_event_progress()로 본인 위치만 0으로.
--- 라운드 전체 리셋(새 범위로 열기)은 open-event-round 엣지 함수(service role)로만 가능하다.
+-- 학생이 고른 방식(mode)은 set_own_event_mode() RPC로만 기록한다(null = 방식 고르는 중).
+-- 라운드 전체 리셋(새 범위로 열기/종료)은 open/close-event-round 엣지 함수(service role)로만 가능하다.
 -- ─────────────────────────────────────────────
 create table public.event_progress (
   user_id uuid primary key references public.profiles (id) on delete cascade,
   position int not null default 0 check (position >= 0 and position <= 48),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  mode text check (mode in ('all', 'one')),
+  created_at timestamptz not null default now()
 );
 
 alter table public.event_progress enable row level security;
@@ -174,13 +176,13 @@ create policy "event_round_select_all"
 grant select on public.event_round to anon, authenticated;
 -- 쓰기 정책 없음 — open-event-round / close-event-round 엣지 함수(service role)로만 변경.
 
--- 공유화면(로그인 없음) 전용 뷰: 참가자의 이름 + 위치만 노출한다.
+-- 공유화면(로그인 없음) 전용 뷰: 참가자의 이름 + 위치 + 고른 방식 + 접속 시각만 노출한다.
 -- profiles 테이블 자체는 anon에게 열려있지 않으므로(authenticated만 select 가능),
 -- event_progress에 profiles를 직접 embed하면 anon 요청에서는 이름이 비어 온다 —
 -- 이 뷰는 소유자 권한으로 실행되는 일반 뷰라 그 제한을 우회해 이름만 안전하게 노출한다.
 -- leaderboard/attempt_feed와 반대로 이 뷰는 anon에게도 의도적으로 공개한다.
 create view public.event_board as
-select ep.user_id, ep.position, p.name
+select ep.user_id, ep.position, p.name, ep.mode, ep.created_at
 from public.event_progress ep
 join public.profiles p on p.id = ep.user_id;
 
@@ -217,21 +219,30 @@ $$;
 revoke all on function public.increment_event_progress(int) from public;
 grant execute on function public.increment_event_progress(int) to authenticated;
 
--- 학생이 "모드 선택으로 돌아가기"를 누르면 본인 진행만 0으로 되돌린다
--- (다른 사람 행은 절대 건드릴 수 없음 — auth.uid()로 고정).
-create or replace function public.reset_own_event_progress()
+-- 학생이 방식을 고르면 공유화면에 방식 뱃지가 뜬다. p_mode가 null이면
+-- "모드 선택으로 돌아가기" — 방식을 비우고 쌓은 개수도 0으로 되돌린다(접속 상태는 유지).
+-- 다른 사람 행은 절대 건드릴 수 없음 — auth.uid()로 고정.
+create or replace function public.set_own_event_mode(p_mode text)
 returns void
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+begin
+  if p_mode is not null and p_mode not in ('all', 'one') then
+    raise exception 'invalid mode';
+  end if;
+
   update public.event_progress
-  set position = 0, updated_at = now()
+  set mode = p_mode,
+      position = case when p_mode is null then 0 else position end,
+      updated_at = now()
   where user_id = auth.uid();
+end;
 $$;
 
-revoke all on function public.reset_own_event_progress() from public;
-grant execute on function public.reset_own_event_progress() to authenticated;
+revoke all on function public.set_own_event_mode(text) from public;
+grant execute on function public.set_own_event_mode(text) to authenticated;
 
 -- ⚠️ event_progress와 event_round 둘 다, Supabase 대시보드 Database > Replication에서
 --    Replication을 반드시 켜야 postgres_changes 실시간 구독이 동작한다.

@@ -1,4 +1,4 @@
-export type EventMode = 'all' | 'one'
+import type { EventMode } from '@/lib/eventProgress'
 
 export default function EventModeSelect({ onSelect }: { onSelect: (mode: EventMode) => void }) {
   return (

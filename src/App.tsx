@@ -13,6 +13,7 @@ import Signup from '@/pages/Signup'
 import Good from '@/pages/Good'
 import Event from '@/pages/Event'
 import EventBoard from '@/pages/EventBoard'
+import EventCardBoard from '@/pages/EventCardBoard'
 import RequireAuth from '@/components/RequireAuth'
 import RequireTeacher from '@/components/RequireTeacher'
 import AppShell from '@/components/AppShell'
@@ -27,7 +28,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/good" element={<Good />} />
-      <Route path="/focus-share" element={<EventBoard />} />
+      <Route path="/focus-racing" element={<EventBoard />} />
+      <Route path="/focus-card" element={<EventCardBoard />} />
 
       <Route element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route path="/" element={<Home />} />
