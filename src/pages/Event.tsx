@@ -43,7 +43,13 @@ export default function Event() {
   const roundKey = round?.isOpen ? round.updatedAt : null
 
   useEffect(() => {
-    if (!user || !roundKey) return
+    if (!user) return
+    if (!roundKey) {
+      // 라운드가 종료되면(또는 아직 안 열렸으면) 이전 라운드의 모드/쌓은 개수가 대기 화면에 남지 않게 비운다.
+      setMode(null)
+      setPosition(0)
+      return
+    }
     let active = true
     setMode(null)
     // 행을 새로 만들지는 않는다 — "모드 선택" 화면에 있는 동안은 공유화면 말판에 안 보여야 하고,

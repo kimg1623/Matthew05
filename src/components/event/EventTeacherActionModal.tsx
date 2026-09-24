@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { openEventRound } from '@/lib/eventRound'
+import type { RoundActionResult } from '@/lib/eventRound'
 
 type Props = {
-  startVerse: number
-  endVerse: number
+  title: string
+  description: string
+  confirmLabel: string
+  run: () => Promise<RoundActionResult>
   onClose: () => void
   onSuccess: () => void
 }
 
-// "시작" 클릭 시 뜨는 이름+PIN 로그인 폼. 로그인 성공 시 open-event-round를 호출하고,
-// 결과와 무관하게 즉시 로그아웃해서 공유 PC에 로그인 상태가 남지 않게 한다.
-export default function EventOpenRoundModal({ startVerse, endVerse, onClose, onSuccess }: Props) {
+// 공유화면에서 교사만 할 수 있는 동작(라운드 시작/종료)을 확인하는 이름+PIN 로그인 폼.
+// 로그인 성공 시 run()을 실행하고, 결과와 무관하게 즉시 로그아웃해서
+// 공유 PC에 로그인 상태가 남지 않게 한다.
+export default function EventTeacherActionModal({ title, description, confirmLabel, run, onClose, onSuccess }: Props) {
   const { logIn, signOut } = useAuth()
   const [name, setName] = useState('')
   const [pin, setPin] = useState('')
@@ -33,12 +36,12 @@ export default function EventOpenRoundModal({ startVerse, endVerse, onClose, onS
       return
     }
 
-    const openResult = await openEventRound(startVerse, endVerse)
+    const result = await run()
     await signOut()
     setSubmitting(false)
 
-    if (!openResult.ok) {
-      setError(openResult.message)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
     onSuccess()
@@ -47,10 +50,8 @@ export default function EventOpenRoundModal({ startVerse, endVerse, onClose, onS
   return (
     <div className="fixed inset-0 z-20 flex items-end justify-center bg-navy-deep/40 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-[420px] rounded-t-[24px] bg-cream p-5 pb-7 sm:rounded-[24px]" onClick={(e) => e.stopPropagation()}>
-        <div className="text-[16.5px] font-extrabold text-navy">라운드를 열려면 교사 확인이 필요해요</div>
-        <div className="mt-2 text-[13px] leading-relaxed text-text-muted">
-          이름과 PIN을 입력하면 확인 후 {startVerse}~{endVerse}절 범위로 새 라운드가 열려요. 참여 중이던 모든 기록은 초기화됩니다.
-        </div>
+        <div className="text-[16.5px] font-extrabold text-navy">{title}</div>
+        <div className="mt-2 text-[13px] leading-relaxed text-text-muted">{description}</div>
 
         <div className="mt-3.5 flex flex-col gap-2.5">
           <input
@@ -80,7 +81,7 @@ export default function EventOpenRoundModal({ startVerse, endVerse, onClose, onS
             disabled={submitting}
             className="flex-1 rounded-2xl bg-coral py-3.5 text-center text-[13.5px] font-bold text-white disabled:opacity-50"
           >
-            {submitting ? '확인 중...' : '확인하고 열기'}
+            {submitting ? '확인 중...' : confirmLabel}
           </button>
         </div>
       </div>

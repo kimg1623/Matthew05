@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { fetchEventRound, subscribeToEventRound, type EventRound } from '@/lib/eventRound'
+import { closeEventRound, fetchEventRound, openEventRound, subscribeToEventRound, type EventRound } from '@/lib/eventRound'
 import { fetchEventBoard, subscribeToEventBoard, type EventBoardRow } from '@/lib/eventProgress'
 import EventBoardTrack from '@/components/event/EventBoardTrack'
-import EventOpenRoundModal from '@/components/event/EventOpenRoundModal'
+import EventTeacherActionModal from '@/components/event/EventTeacherActionModal'
 
 const SAFETY_POLL_MS = 15000
 
@@ -12,7 +12,7 @@ export default function EventBoard() {
   const [rows, setRows] = useState<Record<string, EventBoardRow>>({})
   const [startVerse, setStartVerse] = useState(1)
   const [endVerse, setEndVerse] = useState(20)
-  const [showOpenModal, setShowOpenModal] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'open' | 'close' | null>(null)
   const [editingRange, setEditingRange] = useState(false)
 
   const rowsRef = useRef(rows)
@@ -31,7 +31,10 @@ export default function EventBoard() {
   const isOpen = Boolean(round?.isOpen)
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      setRows({}) // 종료된 라운드의 참가자 잔상이 다음 라운드 시작 때 잠깐 보이지 않게 비운다
+      return
+    }
     let active = true
 
     async function loadBoard() {
@@ -116,7 +119,7 @@ export default function EventBoard() {
                 <span className="text-[20px] font-extrabold text-navy-deep">절</span>
               </div>
               <button
-                onClick={() => setShowOpenModal(true)}
+                onClick={() => setPendingAction('open')}
                 className="mt-7 rounded-full bg-navy-deep px-14 py-4 text-[16px] font-extrabold text-cream shadow-[0_10px_26px_rgba(31,43,64,0.28)]"
               >
                 시작
@@ -136,12 +139,20 @@ export default function EventBoard() {
                   </div>
                   <div className="mt-1.5 text-[12.5px] text-text-muted">정답을 맞힐 때마다 즉시 전진해요</div>
                 </div>
-                <button
-                  onClick={startEditingRange}
-                  className="rounded-[10px] bg-navy-deep px-4 py-2.5 text-[12px] font-extrabold text-cream"
-                >
-                  다른 범위로 다시 열기
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={startEditingRange}
+                    className="rounded-[10px] bg-navy-deep px-4 py-2.5 text-[12px] font-extrabold text-cream"
+                  >
+                    다른 범위로 다시 열기
+                  </button>
+                  <button
+                    onClick={() => setPendingAction('close')}
+                    className="rounded-[10px] bg-navy/[0.08] px-4 py-2.5 text-[12px] font-extrabold text-navy"
+                  >
+                    종료
+                  </button>
+                </div>
               </div>
 
               <EventBoardTrack rows={Object.values(rows)} length={length} />
@@ -156,13 +167,28 @@ export default function EventBoard() {
           )}
       </div>
 
-      {showOpenModal && (
-        <EventOpenRoundModal
-          startVerse={startVerse}
-          endVerse={endVerse}
-          onClose={() => setShowOpenModal(false)}
+      {pendingAction === 'open' && (
+        <EventTeacherActionModal
+          title="라운드를 열려면 교사 확인이 필요해요"
+          description={`이름과 PIN을 입력하면 확인 후 ${startVerse}~${endVerse}절 범위로 새 라운드가 열려요. 참여 중이던 모든 기록은 초기화됩니다.`}
+          confirmLabel="확인하고 열기"
+          run={() => openEventRound(startVerse, endVerse)}
+          onClose={() => setPendingAction(null)}
           onSuccess={() => {
-            setShowOpenModal(false)
+            setPendingAction(null)
+            setEditingRange(false)
+          }}
+        />
+      )}
+      {pendingAction === 'close' && (
+        <EventTeacherActionModal
+          title="라운드를 종료할까요?"
+          description="이름과 PIN을 입력하면 확인 후 라운드가 종료돼요. 참여 중이던 모든 기록이 초기화되고, 참여자 화면은 대기 상태로 돌아가요."
+          confirmLabel="확인하고 종료"
+          run={closeEventRound}
+          onClose={() => setPendingAction(null)}
+          onSuccess={() => {
+            setPendingAction(null)
             setEditingRange(false)
           }}
         />

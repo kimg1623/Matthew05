@@ -150,7 +150,7 @@ grant select on public.event_progress to anon;
 -- ─────────────────────────────────────────────
 -- event_round: 지금 라운드가 열려있는지 + 절 범위(시작절~끝절)를 담는 싱글턴 행.
 -- 공유화면(anon)과 참여화면(authenticated) 둘 다 실시간 구독한다.
--- 쓰기는 open-event-round 엣지 함수(service role)로만.
+-- 쓰기는 open-event-round / close-event-round 엣지 함수(service role)로만.
 -- ─────────────────────────────────────────────
 create table public.event_round (
   id boolean primary key default true,
@@ -172,7 +172,7 @@ alter table public.event_round enable row level security;
 create policy "event_round_select_all"
   on public.event_round for select to anon, authenticated using (true);
 grant select on public.event_round to anon, authenticated;
--- 쓰기 정책 없음 — open-event-round 엣지 함수(service role)로만 변경.
+-- 쓰기 정책 없음 — open-event-round / close-event-round 엣지 함수(service role)로만 변경.
 
 -- 공유화면(로그인 없음) 전용 뷰: 참가자의 이름 + 위치만 노출한다.
 -- profiles 테이블 자체는 anon에게 열려있지 않으므로(authenticated만 select 가능),

@@ -41,13 +41,20 @@ export function subscribeToEventRound(onChange: (round: EventRound) => void) {
   }
 }
 
-type OpenRoundResult = { ok: true } | { ok: false; message: string }
+export type RoundActionResult = { ok: true } | { ok: false; message: string }
 
-export async function openEventRound(startVerse: number, endVerse: number): Promise<OpenRoundResult> {
+export async function openEventRound(startVerse: number, endVerse: number): Promise<RoundActionResult> {
   const { data, error } = await supabase.functions.invoke('open-event-round', {
     body: { startVerse, endVerse },
   })
   if (error) return { ok: false, message: '요청 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
   if (!data?.ok) return { ok: false, message: (data?.error as string) ?? '라운드를 여는 데 실패했어요.' }
+  return { ok: true }
+}
+
+export async function closeEventRound(): Promise<RoundActionResult> {
+  const { data, error } = await supabase.functions.invoke('close-event-round', { body: {} })
+  if (error) return { ok: false, message: '요청 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  if (!data?.ok) return { ok: false, message: (data?.error as string) ?? '라운드를 종료하는 데 실패했어요.' }
   return { ok: true }
 }
